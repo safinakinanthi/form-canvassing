@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Data Canvassing</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    background: #f4f5f7;
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+  }
+  .card {
+    background: #fff;
+    max-width: 520px;
+    width: 100%;
+    padding: 24px;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+  }
+  .section {
+    border-bottom: 1px solid #eee;
+    padding-bottom: 18px;
+    margin-bottom: 18px;
+  }
+  .section:last-of-type { border-bottom: none; }
+  h1 {
+    font-size: 19px;
+    margin-bottom: 4px;
+    color: #1a1a1a;
+  }
+  p.sub {
+    color: #666;
+    font-size: 13px;
+    margin-top: 0;
+    margin-bottom: 20px;
+  }
+  label.field-label {
+    display: block;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 8px;
+  }
+  label.field-label .req { color: #d33; }
+  input[type="text"], input[type="date"], input[type="tel"], input[type="number"], textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #d5d7db;
+    border-radius: 8px;
+    font-size: 14px;
+    margin-bottom: 2px;
+  }
+  input[readonly] {
+    background: #f0f2f5;
+    color: #555;
+  }
+  .radio-group, .checkbox-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .radio-option, .checkbox-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: #333;
+  }
+  .radio-option input, .checkbox-option input {
+    width: 17px;
+    height: 17px;
+    margin: 0;
+  }
+  .status {
+    margin-bottom: 16px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .status.loading { background: #fff8e1; color: #8a6d00; }
+  .status.ok { background: #e6f4ea; color: #1e7b34; }
+  .status.error { background: #fdecea; color: #a92f2f; }
+  .coords-row { display: flex; gap: 10px; margin-bottom: 4px; }
+  .coords-row > div { flex: 1; }
+  .map-link { font-size: 12px; margin-top: 4px; display: inline-block; }
+  button.retry {
+    margin-top: 8px;
+    width: 100%;
+    padding: 9px;
+    border: none;
+    border-radius: 8px;
+    background: #eee;
+    color: #333;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .file-upload {
+    border: 1.5px dashed #c9cdd3;
+    border-radius: 8px;
+    padding: 16px;
+    text-align: center;
+    cursor: pointer;
+    font-size: 13px;
+    color: #555;
+    background: #fafafa;
+  }
+  .file-upload input { display: none; }
+  .file-preview {
+    margin-top: 10px;
+    max-width: 100%;
+    border-radius: 8px;
+    display: none;
+  }
+  .conditional {
+    display: none;
+    margin-top: 14px;
+    padding-left: 4px;
+    border-left: 3px solid #e5e7eb;
+    padding-left: 12px;
+  }
+  .conditional.show { display: block; }
+  button#submitBtn {
+    width: 100%;
+    padding: 13px;
+    border: none;
+    border-radius: 8px;
+    background: #2563eb;
+    color: #fff;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 6px;
+  }
+  button#submitBtn:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h1>Data Canvassing</h1>
+  <p class="sub">Isi setiap habis kunjungan</p>
+
+  <div class="section">
+    <div id="locStatus" class="status loading">📍 Mendeteksi lokasi...</div>
+    <div class="coords-row">
+      <div>
+        <label class="field-label">Latitude</label>
+        <input type="text" id="lat" readonly placeholder="-">
+      </div>
+      <div>
+        <label class="field-label">Longitude</label>
+        <input type="text" id="lng" readonly placeholder="-">
+      </div>
+    </div>
+    <a id="mapLink" class="map-link" href="#" target="_blank" style="display:none;">Lihat di Google Maps →</a>
+    <button id="retryBtn" class="retry" style="display:none;" onclick="detectLocation()">Coba Deteksi Ulang</button>
+  </div>
+
+  <div class="section">
+    <label class="field-label">Yang Mengisi</label>
+    <input type="text" id="yangMengisi">
+  </div>
+
+  <div class="section">
+    <label class="field-label">Tanggal Kunjungan <span class="req">*</span></label>
+    <input type="date" id="tanggalKunjungan">
+  </div>
+
+  <div class="section">
+    <label class="field-label">Nama Tempat Yang Dikunjungi <span class="req">*</span></label>
+    <input type="text" id="namaTempat">
+  </div>
+
+  <div class="section">
+    <label class="field-label">Alamat Lokasi <span class="req">*</span></label>
+    <input type="text" id="alamatLokasi">
+  </div>
+
+  <div class="section">
+    <label class="field-label">Jenis Tempat <span class="req">*</span></label>
+    <div class="radio-group" id="jenisTempat">
+      <label class="radio-option"><input type="radio" name="jenisTempat" value="Bengkel"> Bengkel</label>
+      <label class="radio-option"><input type="radio" name="jenisTempat" value="Tambal Ban"> Tambal Ban</label>
+      <label class="radio-option"><input type="radio" name="jenisTempat" value="Perusahaan"> Perusahaan</label>
+      <label class="radio-option"><input type="radio" name="jenisTempat" value="Toko Ban"> Toko Ban</label>
+      <label class="radio-option"><input type="radio" name="jenisTempat" value="Ekspedisi"> Ekspedisi</label>
+    </div>
+  </div>
+
+  <div class="section">
+    <label class="field-label">Upload Tempat <span class="req">*</span></label>
+    <label class="file-upload" id="fileUploadLabel">
+      📷 Klik untuk ambil / pilih foto (Max 10MB)
+      <input type="file" id="fileInput" accept="image/*" onchange="handleFile(event)">
+    </label>
+    <img id="filePreview" class="file-preview">
+  </div>
+
+  <div class="section">
+    <label class="field-label">Nama PIC</label>
+    <input type="text" id="namaPIC">
+  </div>
+
+  <div class="section">
+    <label class="field-label">Jabatan PIC</label>
+    <div class="radio-group" id="jabatanPIC">
+      <label class="radio-option"><input type="radio" name="jabatanPIC" value="Pemilik" onclick="toggleJabatanLain(false)"> Pemilik</label>
+      <label class="radio-option"><input type="radio" name="jabatanPIC" value="Manager" onclick="toggleJabatanLain(false)"> Manager</label>
+      <label class="radio-option"><input type="radio" name="jabatanPIC" value="Staff" onclick="toggleJabatanLain(false)"> Staff</label>
+      <label class="radio-option"><input type="radio" name="jabatanPIC" value="Lainnya" onclick="toggleJabatanLain(true)"> Lainnya</label>
+    </div>
+    <div class="conditional" id="jabatanLainWrap">
+      <input type="text" id="jabatanLain" placeholder="Sebutkan jabatan">
+    </div>
+  </div>
+
+  <div class="section">
+    <label class="field-label">Kontak PIC</label>
+    <input type="tel" id="kontakPIC">
+  </div>
+
+  <div class="section">
+    <label class="field-label">Jenis Ban Bekas</label>
+    <div class="checkbox-group" id="jenisBanBekas">
+      <label class="checkbox-option"><input type="checkbox" value="Ban Mobil"> Ban Mobil</label>
+      <label class="checkbox-option"><input type="checkbox" value="Ban Truk"> Ban Truk</label>
+      <label class="checkbox-option"><input type="checkbox" value="Ban Trailer"> Ban Trailer</label>
+      <label class="checkbox-option"><input type="checkbox" value="Ban Motor"> Ban Motor</label>
+    </div>
+  </div>
+
+  <div class="section">
+    <label class="field-label">Berapa harga ban bekas?</label>
+    <input type="text" id="hargaBanBekas" placeholder="Contoh: 5000/kg">
+  </div>
+
+  <div class="section">
+    <label class="field-label">Sudah ada yang beli ban bekas?</label>
+    <div class="radio-group" id="sudahAdaPembeli">
+      <label class="radio-option"><input type="radio" name="sudahAdaPembeli" value="Sudah" onclick="togglePembeli(true)"> Sudah</label>
+      <label class="radio-option"><input type="radio" name="sudahAdaPembeli" value="Belum" onclick="togglePembeli(false)"> Belum</label>
+    </div>
+    <div class="conditional" id="pembeliWrap">
+      <label class="field-label" style="margin-top:12px;">Siapa pembeli ban bekas saat ini?</label>
+      <input type="text" id="pembeliBanBekas">
+      <label class="field-label" style="margin-top:12px;">Kontak pembeli ban bekas saat ini</label>
+      <input type="tel" id="kontakPembeli">
+    </div>
+  </div>
+
+  <div class="section">
+    <label class="field-label">Stok ban saat ini? <span class="req">*</span></label>
+    <input type="text" id="stokBanSaatIni">
+  </div>
+
+  <div class="section">
+    <label class="field-label">Jumlah ban per bulan?</label>
+    <input type="text" id="jumlahBanPerBulan">
+  </div>
+
+  <div class="section">
+    <label class="field-label">Metode pembelian?</label>
+    <div class="radio-group" id="metodePembelian">
+      <label class="radio-option"><input type="radio" name="metodePembelian" value="Cash"> Cash</label>
+      <label class="radio-option"><input type="radio" name="metodePembelian" value="Transfer"> Transfer</label>
+    </div>
+  </div>
+
+  <button id="submitBtn" onclick="submitForm()">Kirim Data</button>
+</div>
+
+<script>
+// GANTI dengan URL Web App Apps Script kamu setelah deploy
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzwEQ362V-MyOodTPgOg3LJbFgCP-lbjDkBJS6x3rkN0YiSkbA9IAG_NP-tSV6hYqZmXg/exec";
+
+let currentLat = null;
+let currentLng = null;
+let uploadedFileBase64 = null;
+let uploadedFileName = null;
+let uploadedFileMime = null;
+
+function setLocStatus(type, message) {
+  const el = document.getElementById('locStatus');
+  el.className = 'status ' + type;
+  el.innerHTML = message;
+}
+
+let watchId = null;
+let bestAccuracy = Infinity;
+
+function updateLocationDisplay(position, isFinal) {
+  const acc = position.coords.accuracy;
+  // Cuma update kalau ini hasil pertama, atau lebih akurat dari yang tampil sebelumnya
+  if (acc > bestAccuracy) return;
+  bestAccuracy = acc;
+
+  currentLat = position.coords.latitude;
+  currentLng = position.coords.longitude;
+
+  document.getElementById('lat').value = currentLat.toFixed(6);
+  document.getElementById('lng').value = currentLng.toFixed(6);
+
+  const mapLink = document.getElementById('mapLink');
+  mapLink.href = `https://www.google.com/maps?q=${currentLat},${currentLng}`;
+  mapLink.style.display = 'inline-block';
+
+  if (isFinal) {
+    setLocStatus('ok', `✅ Lokasi presisi didapat (akurasi ±${Math.round(acc)}m)`);
+  } else {
+    setLocStatus('loading', `📍 Lokasi awal didapat (±${Math.round(acc)}m) — menyempurnakan...`);
+  }
+}
+
+function detectLocation() {
+  setLocStatus('loading', '📍 Mendeteksi lokasi...');
+  document.getElementById('retryBtn').style.display = 'none';
+  document.getElementById('mapLink').style.display = 'none';
+  bestAccuracy = Infinity;
+  currentLat = null;
+  currentLng = null;
+
+  if (!navigator.geolocation) {
+    setLocStatus('error', '❌ Browser tidak mendukung geolocation.');
+    document.getElementById('retryBtn').style.display = 'block';
+    return;
+  }
+
+  // Langkah 1: ambil lokasi cepat (WiFi/cell tower), tampil dalam 1-3 detik
+  navigator.geolocation.getCurrentPosition(
+    (position) => updateLocationDisplay(position, false),
+    () => { /* biarkan, nanti fallback ke watchPosition di bawah */ },
+    { enableHighAccuracy: false, timeout: 5000, maximumAge: 60000 }
+  );
+
+  // Langkah 2: sambil itu, terus refine pakai GPS presisi tinggi di background
+  if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+
+  let timedOut = false;
+  const timeoutTimer = setTimeout(() => {
+    timedOut = true;
+    if (currentLat !== null) {
+      setLocStatus('ok', `✅ Lokasi terdeteksi (akurasi ±${Math.round(bestAccuracy)}m) — GPS presisi tinggi tidak tersedia, coba pindah ke area terbuka kalau perlu lebih akurat.`);
+    } else {
+      setLocStatus('error', '❌ Gagal mendeteksi lokasi. Pastikan izin lokasi aktif dan coba di area terbuka.');
+      document.getElementById('retryBtn').style.display = 'block';
+    }
+    navigator.geolocation.clearWatch(watchId);
+  }, 20000);
+
+  watchId = navigator.geolocation.watchPosition(
+    (position) => {
+      if (timedOut) return;
+      updateLocationDisplay(position, true);
+      // Kalau akurasi udah bagus (<20m), langsung berhenti, gak perlu nunggu lebih lama
+      if (position.coords.accuracy <= 20) {
+        clearTimeout(timeoutTimer);
+        navigator.geolocation.clearWatch(watchId);
+      }
+    },
+    (error) => {
+      if (timedOut) return;
+      // Kalau langkah 1 juga gagal dan ini juga error, baru tampilkan error
+      if (currentLat === null) {
+        let msg = '❌ Gagal mendeteksi lokasi. ';
+        if (error.code === error.PERMISSION_DENIED) {
+          msg += 'Izin lokasi ditolak — mohon aktifkan izin lokasi untuk browser ini.';
+        } else if (error.code === error.POSITION_UNAVAILABLE) {
+          msg += 'Posisi tidak tersedia.';
+        } else {
+          msg += 'Terjadi kesalahan.';
+        }
+        setLocStatus('error', msg);
+        document.getElementById('retryBtn').style.display = 'block';
+        clearTimeout(timeoutTimer);
+      }
+    },
+    { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
+  );
+}
+
+function toggleJabatanLain(show) {
+  document.getElementById('jabatanLainWrap').classList.toggle('show', show);
+}
+
+function togglePembeli(show) {
+  document.getElementById('pembeliWrap').classList.toggle('show', show);
+}
+
+function handleFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  if (file.size > 10 * 1024 * 1024) {
+    alert('Ukuran file maksimal 10MB.');
+    event.target.value = '';
+    return;
+  }
+
+  uploadedFileName = file.name;
+  uploadedFileMime = file.type;
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    uploadedFileBase64 = reader.result.split(',')[1];
+    const preview = document.getElementById('filePreview');
+    preview.src = reader.result;
+    preview.style.display = 'block';
+    document.getElementById('fileUploadLabel').innerHTML =
+      `✅ ${file.name} <input type="file" id="fileInput" accept="image/*" onchange="handleFile(event)">`;
+  };
+  reader.readAsDataURL(file);
+}
+
+function getRadioValue(name) {
+  const el = document.querySelector(`input[name="${name}"]:checked`);
+  return el ? el.value : "";
+}
+
+function getCheckboxValues(containerId) {
+  const els = document.querySelectorAll(`#${containerId} input[type="checkbox"]:checked`);
+  return Array.from(els).map(e => e.value);
+}
+
+async function submitForm() {
+  // Validasi required fields
+  const tanggalKunjungan = document.getElementById('tanggalKunjungan').value;
+  const namaTempat = document.getElementById('namaTempat').value.trim();
+  const alamatLokasi = document.getElementById('alamatLokasi').value.trim();
+  const jenisTempat = getRadioValue('jenisTempat');
+  const stokBanSaatIni = document.getElementById('stokBanSaatIni').value.trim();
+
+  if (!tanggalKunjungan || !namaTempat || !alamatLokasi || !jenisTempat || !stokBanSaatIni) {
+    alert('Mohon lengkapi semua field bertanda (*).');
+    return;
+  }
+  if (!uploadedFileBase64) {
+    alert('Mohon upload foto tempat.');
+    return;
+  }
+  if (currentLat === null || currentLng === null) {
+    alert('Lokasi belum terdeteksi. Coba deteksi ulang lokasi terlebih dahulu.');
+    return;
+  }
+
+  let jabatanPIC = getRadioValue('jabatanPIC');
+  if (jabatanPIC === 'Lainnya') {
+    jabatanPIC = document.getElementById('jabatanLain').value.trim() || 'Lainnya';
+  }
+
+  const payload = {
+    yangMengisi: document.getElementById('yangMengisi').value.trim(),
+    tanggalKunjungan,
+    namaTempat,
+    alamatLokasi,
+    latitude: currentLat,
+    longitude: currentLng,
+    jenisTempat,
+    fileBase64: uploadedFileBase64,
+    fileName: uploadedFileName,
+    fileMime: uploadedFileMime,
+    namaPIC: document.getElementById('namaPIC').value.trim(),
+    jabatanPIC,
+    kontakPIC: document.getElementById('kontakPIC').value.trim(),
+    jenisBanBekas: getCheckboxValues('jenisBanBekas').join(', '),
+    hargaBanBekas: document.getElementById('hargaBanBekas').value.trim(),
+    sudahAdaPembeli: getRadioValue('sudahAdaPembeli'),
+    pembeliBanBekas: document.getElementById('pembeliBanBekas').value.trim(),
+    kontakPembeli: document.getElementById('kontakPembeli').value.trim(),
+    stokBanSaatIni,
+    jumlahBanPerBulan: document.getElementById('jumlahBanPerBulan').value.trim(),
+    metodePembelian: getRadioValue('metodePembelian'),
+    timestamp: new Date().toISOString()
+  };
+
+  const submitBtn = document.getElementById('submitBtn');
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Mengirim...';
+
+  try {
+    const response = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    });
+
+    const result = await response.json();
+
+    if (result.status === 'success') {
+      document.querySelector('.card').innerHTML =
+        '<h1>✅ Terkirim!</h1><p class="sub">Data canvassing berhasil disimpan. Terima kasih.</p>';
+    } else {
+      throw new Error(result.message || 'Gagal menyimpan data.');
+    }
+  } catch (err) {
+    alert('Terjadi kesalahan saat mengirim data: ' + err.message);
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Kirim Data';
+  }
+}
+
+detectLocation();
+</script>
+
+</body>
+</html>
