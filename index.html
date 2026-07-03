@@ -497,8 +497,13 @@ async function submitForm() {
     const result = await response.json();
 
     if (result.status === 'success') {
-      document.querySelector('.card').innerHTML =
-        '<h1>✅ Terkirim!</h1><p class="sub">Data canvassing berhasil disimpan. Terima kasih.</p>';
+      if (result.photoWarning) {
+        document.querySelector('.card').innerHTML =
+          '<h1>⚠️ Data Tersimpan (Foto Gagal)</h1><p class="sub">Data canvassing berhasil disimpan, tapi foto gagal diupload. Mohon upload foto secara manual atau hubungi admin.</p>';
+      } else {
+        document.querySelector('.card').innerHTML =
+          '<h1>✅ Terkirim!</h1><p class="sub">Data canvassing berhasil disimpan. Terima kasih.</p>';
+      }
     } else {
       throw new Error(result.message || 'Gagal menyimpan data.');
     }
